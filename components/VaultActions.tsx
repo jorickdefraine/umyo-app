@@ -9,68 +9,59 @@ import {
 } from 'wagmi'
 import { erc20Abi } from 'viem'
 import { VAULT_ADDRESS, USDC_ADDRESS, vaultAbi, formatUsdc, formatShares, parseUsdc } from '@/lib/contracts'
-import { useFakeMode } from '@/lib/fakeMode'
-import { FAKE } from '@/lib/fakeData'
 
 type Tab = 'deposit' | 'withdraw'
 type WithdrawMode = 'usdc' | 'shares'
 
 export function VaultActions() {
   const { address, isConnected } = useAccount()
-  const { fakeMode } = useFakeMode()
   const [tab, setTab] = useState<Tab>('deposit')
   const [amount, setAmount] = useState('')
   const [withdrawMode, setWithdrawMode] = useState<WithdrawMode>('usdc')
 
-  const isDeployed = fakeMode ? true : !!VAULT_ADDRESS
-  const effectiveIsConnected = fakeMode ? true : isConnected
+  const isDeployed = !!VAULT_ADDRESS
   const amountBigInt = parseUsdc(amount)
 
   // ── Reads ─────────────────────────────────────────────────────────────────
 
-  const { data: usdcBalanceRaw, refetch: refetchUsdcBalance } = useReadContract({
+  const { data: usdcBalance, refetch: refetchUsdcBalance } = useReadContract({
     address: USDC_ADDRESS,
     abi: erc20Abi,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
-    query: { enabled: isConnected && !!address && !fakeMode },
+    query: { enabled: isConnected && !!address },
   })
 
-  const { data: allowanceRaw, refetch: refetchAllowance } = useReadContract({
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address: USDC_ADDRESS,
     abi: erc20Abi,
     functionName: 'allowance',
     args: address ? [address, VAULT_ADDRESS] : undefined,
-    query: { enabled: isConnected && !!address && !!VAULT_ADDRESS && !fakeMode },
+    query: { enabled: isConnected && !!address && !!VAULT_ADDRESS },
   })
 
-  const { data: vUmyoBalanceRaw, refetch: refetchVUmyoBalance } = useReadContract({
+  const { data: vUmyoBalance, refetch: refetchVUmyoBalance } = useReadContract({
     address: VAULT_ADDRESS,
     abi: vaultAbi,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
-    query: { enabled: isConnected && !!address && !!VAULT_ADDRESS && !fakeMode },
+    query: { enabled: isConnected && !!address && !!VAULT_ADDRESS },
   })
 
-  const { data: maxWithdrawableRaw } = useReadContract({
+  const { data: maxWithdrawable } = useReadContract({
     address: VAULT_ADDRESS,
     abi: vaultAbi,
     functionName: 'maxWithdraw',
     args: address ? [address] : undefined,
-    query: { enabled: isConnected && !!address && !!VAULT_ADDRESS && !fakeMode },
+    query: { enabled: isConnected && !!address && !!VAULT_ADDRESS },
   })
-
-  const usdcBalance = fakeMode ? FAKE.usdcBalanceBigInt : usdcBalanceRaw
-  const allowance = fakeMode ? FAKE.allowanceBigInt : allowanceRaw
-  const vUmyoBalance = fakeMode ? FAKE.vumyBigInt : vUmyoBalanceRaw
-  const maxWithdrawable = fakeMode ? FAKE.maxWithdrawBigInt : maxWithdrawableRaw
 
   const { data: depositPreview } = useReadContract({
     address: VAULT_ADDRESS,
     abi: vaultAbi,
     functionName: 'previewDeposit',
     args: amountBigInt > 0n ? [amountBigInt] : undefined,
-    query: { enabled: tab === 'deposit' && amountBigInt > 0n && !!VAULT_ADDRESS && !fakeMode },
+    query: { enabled: tab === 'deposit' && amountBigInt > 0n && !!VAULT_ADDRESS },
   })
 
   const withdrawAmountBigInt = withdrawMode === 'usdc' ? amountBigInt : 0n
@@ -81,7 +72,7 @@ export function VaultActions() {
     abi: vaultAbi,
     functionName: 'previewWithdraw',
     args: withdrawAmountBigInt > 0n ? [withdrawAmountBigInt] : undefined,
-    query: { enabled: tab === 'withdraw' && withdrawMode === 'usdc' && withdrawAmountBigInt > 0n && !!VAULT_ADDRESS && !fakeMode },
+    query: { enabled: tab === 'withdraw' && withdrawMode === 'usdc' && withdrawAmountBigInt > 0n && !!VAULT_ADDRESS },
   })
 
   const { data: redeemPreview } = useReadContract({
@@ -89,7 +80,7 @@ export function VaultActions() {
     abi: vaultAbi,
     functionName: 'previewRedeem',
     args: redeemSharesBigInt > 0n ? [redeemSharesBigInt] : undefined,
-    query: { enabled: tab === 'withdraw' && withdrawMode === 'shares' && redeemSharesBigInt > 0n && !!VAULT_ADDRESS && !fakeMode },
+    query: { enabled: tab === 'withdraw' && withdrawMode === 'shares' && redeemSharesBigInt > 0n && !!VAULT_ADDRESS },
   })
 
   // ── Writes ────────────────────────────────────────────────────────────────
@@ -199,7 +190,7 @@ export function VaultActions() {
     )
   }
 
-  if (!effectiveIsConnected) {
+  if (!isConnected) {
     return (
       <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center">
         <p className="text-white/60">Connect your wallet to deposit or withdraw.</p>

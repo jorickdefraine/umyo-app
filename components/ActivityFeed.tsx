@@ -4,8 +4,6 @@ import { useQuery } from '@tanstack/react-query'
 import { usePublicClient } from 'wagmi'
 import { parseAbiItem } from 'viem'
 import { VAULT_ADDRESS, formatUsdc } from '@/lib/contracts'
-import { useFakeMode } from '@/lib/fakeMode'
-import { FAKE } from '@/lib/fakeData'
 
 interface RebalanceEntry {
   blockNumber: bigint
@@ -32,7 +30,6 @@ function formatTs(ts: bigint): string {
 
 export function ActivityFeed() {
   const publicClient = usePublicClient()
-  const { fakeMode } = useFakeMode()
   const isDeployed = !!VAULT_ADDRESS
 
   const { data: events, isLoading } = useQuery<RebalanceEntry[]>({
@@ -61,39 +58,10 @@ export function ActivityFeed() {
         txHash: log.transactionHash ?? '',
       }))
     },
-    enabled: isDeployed && !!publicClient && !fakeMode,
+    enabled: isDeployed && !!publicClient,
     refetchInterval: 60_000,
     staleTime: 30_000,
   })
-
-  if (fakeMode) {
-    return (
-      <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-        <p className="text-xs text-white/40 uppercase tracking-wider mb-4">Recent Rebalances</p>
-        <div className="space-y-3">
-          {FAKE.rebalances.map((e, i) => (
-            <div
-              key={i}
-              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 py-3 border-b border-white/5 last:border-0"
-            >
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-white/30 font-mono">{shortAddr(e.oldVault)}</span>
-                  <span className="text-white/20">→</span>
-                  <span className="text-white/60 font-mono">{shortAddr(e.newVault)}</span>
-                </div>
-                <p className="text-xs text-white/30">{e.date}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-white font-medium">{e.deployed}</p>
-                <p className="text-xs text-white/30">deployed</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="bg-white/5 border border-white/10 rounded-xl p-5">
