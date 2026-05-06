@@ -163,7 +163,7 @@ export default function Landing() {
                 <p className="text-xs text-white/30">ETH staking</p>
               </div>
               <div className="space-y-1 relative">
-                <p className="text-2xl sm:text-3xl font-bold text-green-400">8%+</p>
+                <p className="text-2xl sm:text-3xl font-bold text-green-400"><LandingApy /></p>
                 <p className="text-xs text-green-400/60">UMYO · USDC</p>
                 <span className="absolute -top-1 -right-1 sm:right-0 bg-green-500/20 border border-green-500/30 text-green-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                   best
