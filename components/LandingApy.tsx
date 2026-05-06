@@ -1,6 +1,8 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import { useReadContract } from 'wagmi'
+import { VAULT_ADDRESS, vaultAbi } from '@/lib/contracts'
 
 interface MorphoVault {
   address: string
@@ -9,6 +11,13 @@ interface MorphoVault {
 }
 
 export function LandingApy() {
+  const { data: morphoVaultAddr } = useReadContract({
+    address: VAULT_ADDRESS,
+    abi: vaultAbi,
+    functionName: 'morphoVault',
+    query: { enabled: !!VAULT_ADDRESS, refetchInterval: 30_000 },
+  })
+
   const { data } = useQuery<MorphoVault[]>({
     queryKey: ['morpho-apys'],
     queryFn: async () => {
@@ -19,18 +28,17 @@ export function LandingApy() {
     staleTime: 60_000,
   })
 
-  const best = data?.reduce((max, v) => {
-    const apy = v.dailyApys?.netApy ?? 0
-    return apy > max ? apy : max
-  }, 0)
+  const currentApy = data?.find(
+    (v) => morphoVaultAddr && v.address.toLowerCase() === morphoVaultAddr.toLowerCase()
+  )?.dailyApys?.netApy
 
-  const apyStr = best != null && best > 0
-    ? `${(best * 100).toFixed(2)}%`
+  const apyStr = currentApy != null
+    ? `${(currentApy * 100).toFixed(2)}%`
     : '8%+'
 
   return (
     <div className="inline-flex flex-col items-center gap-1">
-      <p className="text-xs text-white/30 uppercase tracking-widest">Current best APY</p>
+      <p className="text-xs text-white/30 uppercase tracking-widest">Current APY</p>
       <p className="text-6xl sm:text-7xl font-bold text-green-400 leading-none tabular-nums">
         {apyStr}
       </p>
