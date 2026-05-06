@@ -150,29 +150,6 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* ── Comparison bar ──────────────────────────────────────────────── */}
-        <section className="py-8 px-4 sm:px-6 border-y border-white/5">
-          <div className="max-w-3xl mx-auto">
-            <div className="grid grid-cols-3 gap-4 sm:gap-0 sm:divide-x sm:divide-white/10 text-center">
-              <div className="space-y-1">
-                <p className="text-2xl sm:text-3xl font-bold text-white/20">~0.5%</p>
-                <p className="text-xs text-white/30">savings account</p>
-              </div>
-              <div className="space-y-1 sm:py-2">
-                <p className="text-2xl sm:text-3xl font-bold text-white/20">~3%</p>
-                <p className="text-xs text-white/30">ETH staking</p>
-              </div>
-              <div className="space-y-1 relative">
-                <p className="text-2xl sm:text-3xl font-bold text-green-400"><LandingApy /></p>
-                <p className="text-xs text-green-400/60">UMYO · USDC</p>
-                <span className="absolute -top-1 -right-1 sm:right-0 bg-green-500/20 border border-green-500/30 text-green-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
-                  best
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* ── How it works ─────────────────────────────────────────────────── */}
         <section id="how-it-works" className="py-20 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
@@ -292,9 +269,6 @@ export default function Landing() {
                 <p className="text-white/30 text-xs">The most audited lending protocol on Base</p>
               </div>
             </div>
-            <p className="text-white/25 text-sm mt-6 max-w-md mx-auto leading-relaxed">
-              UMYO doesn&apos;t invent risk — it selects the best audited, battle-tested Morpho USDC vaults and routes your funds there.
-            </p>
           </div>
         </section>
 
