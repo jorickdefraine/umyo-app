@@ -18,7 +18,7 @@ function shortAddr(addr: string): string {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`
 }
 
-function formatTs(ts: bigint): string {
+function formatTs(ts: number): string {
   return new Date(Number(ts) * 1000).toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
