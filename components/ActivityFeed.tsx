@@ -7,10 +7,9 @@ import { VAULT_ADDRESS, formatUsdc } from '@/lib/contracts'
 
 interface RebalanceEntry {
   blockNumber: bigint
-  timestamp: bigint
-  oldVault: string
-  newVault: string
-  assetsWithdrawn: bigint
+  timestamp: number
+  fromVault: string
+  toVault: string
   assetsDeployed: bigint
   txHash: string
 }
@@ -37,27 +36,32 @@ export function ActivityFeed() {
     queryFn: async () => {
       if (!publicClient) return []
       const blockNumber = await publicClient.getBlockNumber()
-      const fromBlock = blockNumber > 50_000n ? blockNumber - 50_000n : 0n
+      const fromBlock = blockNumber > 10_000n ? blockNumber - 10_000n : 0n
 
       const logs = await publicClient.getLogs({
         address: VAULT_ADDRESS,
         event: parseAbiItem(
-          'event Rebalanced(address indexed oldVault, address indexed newVault, uint256 assetsWithdrawn, uint256 assetsDeployed, uint256 timestamp)'
+          'event Rebalanced(address indexed fromVault, address indexed toVault, uint256 assetsDeployed)'
         ),
         fromBlock,
         toBlock: 'latest',
       })
 
-      return logs.slice(-10).reverse().map((log) => ({
-        blockNumber: log.blockNumber ?? 0n,
-        timestamp: (log.args as { timestamp: bigint }).timestamp,
-        oldVault: (log.args as { oldVault: string }).oldVault,
-        newVault: (log.args as { newVault: string }).newVault,
-        assetsWithdrawn: (log.args as { assetsWithdrawn: bigint }).assetsWithdrawn,
-        assetsDeployed: (log.args as { assetsDeployed: bigint }).assetsDeployed,
-        txHash: log.transactionHash ?? '',
-      }))
-    },
+      const entries = await Promise.all(
+        logs.slice(-10).reverse().map(async (log) => {
+          const block = await publicClient.getBlock({ blockNumber: log.blockNumber! })
+          return {
+            blockNumber: log.blockNumber ?? 0n,
+            timestamp: Number(block.timestamp),
+            fromVault: (log.args as { fromVault: string }).fromVault,
+            toVault: (log.args as { toVault: string }).toVault,
+            assetsDeployed: (log.args as { assetsDeployed: bigint }).assetsDeployed,
+            txHash: log.transactionHash ?? '',
+          }
+        })
+      )
+      return entries
+      },
     enabled: isDeployed && !!publicClient,
     refetchInterval: 60_000,
     staleTime: 30_000,
@@ -85,9 +89,9 @@ export function ActivityFeed() {
             <div key={i} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 py-3 border-b border-white/5 last:border-0">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-white/30 font-mono">{shortAddr(e.oldVault)}</span>
+                  <span className="text-white/30 font-mono">{shortAddr(e.fromVault)}</span>
                   <span className="text-white/20">→</span>
-                  <span className="text-white/60 font-mono">{shortAddr(e.newVault)}</span>
+                  <span className="text-white/60 font-mono">{shortAddr(e.toVault)}</span>
                 </div>
                 <p className="text-xs text-white/30">{formatTs(e.timestamp)}</p>
               </div>
