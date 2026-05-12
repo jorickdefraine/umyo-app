@@ -35,20 +35,38 @@ export function ActivityFeed() {
     queryKey: ['rebalances', VAULT_ADDRESS],
     queryFn: async () => {
       if (!publicClient) return []
-      const blockNumber = await publicClient.getBlockNumber()
-      const fromBlock = blockNumber > 10_000n ? blockNumber - 10_000n : 0n
 
-      const logs = await publicClient.getLogs({
-        address: VAULT_ADDRESS,
-        event: parseAbiItem(
-          'event Rebalanced(address indexed fromVault, address indexed toVault, uint256 assetsDeployed)'
-        ),
-        fromBlock,
-        toBlock: 'latest',
-      })
+      const CHUNK_SIZE = 2_000n
+      const MAX_LOOKBACK = 302_400n // ~7 days on Base (2s/block)
+      const TARGET = 10
+
+      const latestBlock = await publicClient.getBlockNumber()
+      const minBlock = latestBlock > MAX_LOOKBACK ? latestBlock - MAX_LOOKBACK : 0n
+
+      let toBlock = latestBlock
+      let allLogs: Awaited<ReturnType<typeof publicClient.getLogs>> = []
+
+      while (toBlock >= minBlock && allLogs.length < TARGET) {
+        const fromBlock = toBlock > CHUNK_SIZE ? toBlock - CHUNK_SIZE : 0n
+        const clampedFrom = fromBlock < minBlock ? minBlock : fromBlock
+
+        const chunk = await publicClient.getLogs({
+          address: VAULT_ADDRESS,
+          event: parseAbiItem(
+            'event Rebalanced(address indexed fromVault, address indexed toVault, uint256 assetsDeployed)'
+          ),
+          fromBlock: clampedFrom,
+          toBlock,
+        })
+
+        allLogs = [...chunk, ...allLogs]
+
+        if (clampedFrom <= minBlock) break
+        toBlock = clampedFrom - 1n
+      }
 
       const entries = await Promise.all(
-        logs.slice(-10).reverse().map(async (log) => {
+        allLogs.slice(-TARGET).reverse().map(async (log) => {
           const block = await publicClient.getBlock({ blockNumber: log.blockNumber! })
           return {
             blockNumber: log.blockNumber ?? 0n,
@@ -61,7 +79,7 @@ export function ActivityFeed() {
         })
       )
       return entries
-      },
+    },
     enabled: isDeployed && !!publicClient,
     refetchInterval: 60_000,
     staleTime: 30_000,
